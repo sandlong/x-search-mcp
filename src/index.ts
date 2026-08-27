@@ -27,9 +27,14 @@ function createServer() {
   server.registerTool(
     "search",
     {
-      description: "Search X/Twitter using xAI's semantic x_search tool.",
+      description: "Search and read X/Twitter using xAI's LLM-based x_search tool.",
       inputSchema: {
-        query: z.string().min(1).describe("What to search for on X."),
+        query: z
+          .string()
+          .min(1)
+          .describe(
+            'Semantic search, or give X post URLs, handles, or status IDs with natural-language instructions such as "no summarization", "read the important replies", or "give the thread verbatim".',
+          ),
         allowed_x_handles: handles
           .optional()
           .describe("Optional allow-list of X handles, without @. Max 20. Do not use with excluded_x_handles."),
