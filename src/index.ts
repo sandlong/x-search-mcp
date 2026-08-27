@@ -28,6 +28,12 @@ function createServer() {
     "search",
     {
       description: "Search and read X/Twitter using xAI's LLM-based x_search tool.",
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true,
+      },
       inputSchema: {
         query: z
           .string()
