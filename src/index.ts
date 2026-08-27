@@ -1,22 +1,18 @@
-import { createMcpHandler } from "agents/mcp/server";
+#!/usr/bin/env node
+
 import { McpServer } from "@modelcontextprotocol/server";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { z } from "zod";
 
-import { runXSearch, UpstreamError, type XSearchInput } from "./xai";
-
-type Env = {
-  XAI_BASE_URL?: string;
-  XAI_MODEL?: string;
-  XAI_API_KEY?: string;
-};
+import { runXSearch, UpstreamError, type XSearchInput } from "./xai.js";
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 const handles = z.array(z.string().min(1)).max(20);
 
-function requireConfig(env: Env) {
-  const baseUrl = env.XAI_BASE_URL?.trim();
-  const model = env.XAI_MODEL?.trim();
-  const apiKey = env.XAI_API_KEY?.trim();
+function requireConfig() {
+  const baseUrl = process.env.XAI_BASE_URL?.trim();
+  const model = process.env.XAI_MODEL?.trim();
+  const apiKey = process.env.XAI_API_KEY?.trim();
 
   if (!baseUrl) throw new Error("XAI_BASE_URL is required");
   if (!model) throw new Error("XAI_MODEL is required");
@@ -25,8 +21,8 @@ function requireConfig(env: Env) {
   return { baseUrl, model, apiKey };
 }
 
-function createServer(env: Env) {
-  const server = new McpServer({ name: "x-search", version: "0.1.0" });
+function createServer() {
+  const server = new McpServer({ name: "x-search", version: "0.2.0" });
 
   server.registerTool(
     "search",
@@ -54,7 +50,7 @@ function createServer(env: Env) {
     },
     async (args) => {
       try {
-        const text = await runXSearch(args as XSearchInput, requireConfig(env));
+        const text = await runXSearch(args as XSearchInput, requireConfig());
         return { content: [{ type: "text" as const, text }] };
       } catch (error) {
         if (error instanceof UpstreamError) {
@@ -74,19 +70,8 @@ function createServer(env: Env) {
   return server;
 }
 
-export default {
-  async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    const url = new URL(request.url);
-
-    if (url.pathname === "/health") {
-      return Response.json({ ok: true, server: "x-search" });
-    }
-
-    if (url.pathname !== "/mcp") {
-      return new Response("Not Found", { status: 404 });
-    }
-
-    const handler = createMcpHandler(() => createServer(env), { route: "/mcp" });
-    return handler(request, env, ctx);
+serveStdio(createServer, {
+  onerror(error) {
+    console.error(error);
   },
-} satisfies ExportedHandler<Env>;
+});
