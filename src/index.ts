@@ -27,7 +27,7 @@ function createServer() {
   server.registerTool(
     "search",
     {
-      description: "Search X/Twitter using xAI's server-side x_search tool.",
+      description: "Search X/Twitter using xAI's semantic x_search tool.",
       inputSchema: {
         query: z.string().min(1).describe("What to search for on X."),
         allowed_x_handles: handles
