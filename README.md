@@ -52,6 +52,6 @@ For local development, put the three required upstream values in a git-ignored `
 
 Set the three required Worker secrets before deployment (through the dashboard or Wrangler), then run `npm run deploy`. Set `SECRET_PATH` as another Worker secret to hide the endpoint behind that path.
 
-The GitHub workflow checks pull requests and deploys `main`. Configure the repository's `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` Actions secrets before pushing to `main`. Subsequent deployments retain the Worker secrets.
+Cloudflare Workers Builds connects this repository's `main` branch to the existing `x-search-mcp` Worker. Pushing to `main` runs the tests and type-check, then deploys it. The upstream and secret-path bindings are configured on the production Worker and persist across deployments.
 
 MCP clients should use the full Streamable HTTP endpoint URL, with no `npx` command or stdio settings.
