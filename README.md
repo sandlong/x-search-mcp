@@ -1,13 +1,14 @@
 # x-search-mcp
 
-A thin stdio MCP wrapper around xAI's server-side `x_search` tool.
+A Cloudflare Worker that exposes xAI's server-side `x_search` as a Streamable HTTP MCP server.
 
-The server reads its upstream configuration from environment variables and forwards each `search` call to an OpenAI/xAI Responses-compatible endpoint. It is designed to work with both the official xAI endpoint and middleware such as CLIProxyAPI that implements the same Responses + `x_search` protocol.
+The `search` tool forwards requests to an OpenAI/xAI Responses-compatible endpoint, including compatible middleware such as CLIProxyAPI. It keeps the original tool arguments and returns the upstream text as received.
 
 ## MCP interface
 
 - Server name: `x-search`
-- Transport: stdio
+- Transport: Streamable HTTP
+- Endpoint: `/mcp` by default, or `/<SECRET_PATH>/mcp` when the optional secret is set
 - Tool: `search`
 
 Tool arguments:
@@ -24,50 +25,33 @@ Tool arguments:
 
 The handle-filter state is one of three choices: no filter (default), an allow-list, or an exclude-list. Supplying both lists is rejected.
 
-## Environment
+## Worker environment
 
-The MCP client provides exactly three upstream settings to the spawned process:
+Configure these Worker secrets:
 
-- `XAI_BASE_URL` — for example `https://api.x.ai/v1` or an OpenAI/xAI-compatible middleware base URL ending in `/v1`
-- `XAI_MODEL` — for example `grok-4.6`
-- `XAI_API_KEY` — bearer credential accepted by the configured upstream
+- `XAI_BASE_URL` (required): for example `https://api.x.ai/v1`, or a compatible middleware base URL ending in `/v1`.
+- `XAI_MODEL` (required): the model passed to the Responses API.
+- `XAI_API_KEY` (required): bearer credential accepted by the configured upstream.
+- `SECRET_PATH` (optional): a hard-to-guess URL prefix. If set, `/mcp` returns 404, and the root health response does not disclose the secret.
 
-The implementation only uses the Responses API. It sends one native `x_search` tool and forces tool use with `tool_choice: "required"`.
+The `SECRET_PATH` value is a shared URL secret, not user-specific authentication. Anyone with the full endpoint URL can use the upstream credential. Do not publish the complete URL.
 
-## Install / run
-
-For clients that support stdio MCP servers, run directly from GitHub:
-
-```bash
-npx -y github:sandlong/x-search-mcp
-```
-
-and provide the three variables in that MCP server's `env` configuration. For example:
-
-```json
-{
-  "command": "npx",
-  "args": ["-y", "github:sandlong/x-search-mcp"],
-  "env": {
-    "XAI_BASE_URL": "https://api.x.ai/v1",
-    "XAI_MODEL": "grok-4.6",
-    "XAI_API_KEY": "..."
-  }
-}
-```
+Only the Responses API is used. Each call sends one native `x_search` tool with `tool_choice: "required"`. Non-2xx upstream response bodies are returned to the MCP client.
 
 ## Development
 
 ```bash
-npm install
-npm run typecheck
-npm test
+npm ci
 npm run build
+npm test
 ```
 
-## Behavior
+For local development, put the three required upstream values in a git-ignored `.dev.vars` file and run `npx wrangler dev`. Wrangler's required-secret declaration loads only the three listed values from `.dev.vars`; to test an optional secret path locally, use `npx wrangler dev --var SECRET_PATH:local-test-path`. Do not put a production secret on the command line.
 
-- No Chat Completions compatibility layer.
-- No result rewriting or citation cleanup; xAI/middleware output text is returned as received.
-- Non-2xx upstream response bodies are returned to the MCP client verbatim.
-- No HTTP server, database, or persistent state.
+## Deployment
+
+Set the three required Worker secrets before deployment (through the dashboard or Wrangler), then run `npm run deploy`. Set `SECRET_PATH` as another Worker secret to hide the endpoint behind that path.
+
+The GitHub workflow checks pull requests and deploys `main`. Configure the repository's `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` Actions secrets before pushing to `main`. Subsequent deployments retain the Worker secrets.
+
+MCP clients should use the full Streamable HTTP endpoint URL, with no `npx` command or stdio settings.

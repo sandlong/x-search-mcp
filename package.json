@@ -1,32 +1,27 @@
 {
   "name": "x-search-mcp",
-  "version": "0.2.0",
-  "description": "A thin stdio MCP wrapper around xAI's server-side x_search tool.",
+  "version": "0.3.0",
+  "private": true,
+  "description": "A Streamable HTTP MCP Worker around xAI's server-side x_search tool.",
   "type": "module",
-  "bin": {
-    "x-search": "dist/index.js"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "engines": {
-    "node": ">=20"
-  },
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "prepare": "npm run build",
-    "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "types": "wrangler types",
+    "typecheck": "npm run types && tsc -p tsconfig.json --noEmit",
+    "test": "XAI_BASE_URL=https://example.test/v1 XAI_MODEL=test XAI_API_KEY=test vitest run",
+    "build": "npm run typecheck",
+    "deploy": "wrangler deploy"
   },
   "dependencies": {
     "@modelcontextprotocol/server": "2.0.0",
+    "agents": "0.20.1",
     "zod": "4.4.3"
   },
   "devDependencies": {
+    "@cloudflare/vitest-pool-workers": "0.22.0",
     "@types/node": "^24.0.0",
     "typescript": "7.0.2",
-    "vitest": "4.1.11"
+    "vite": "8.2.0",
+    "vitest": "4.1.11",
+    "wrangler": "4.137.0"
   }
 }
