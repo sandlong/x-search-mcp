@@ -4,7 +4,12 @@ import { z } from "zod";
 
 import { runXSearch, UpstreamError, type XSearchInput } from "./xai.js";
 
-type WorkerEnv = Env & { SECRET_PATH?: string };
+type WorkerEnv = {
+  XAI_BASE_URL: string;
+  XAI_MODEL: string;
+  XAI_API_KEY: string;
+  SECRET_PATH?: string;
+};
 
 const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expected YYYY-MM-DD");
 const handles = z.array(z.string().min(1)).max(20);
