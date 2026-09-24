@@ -6,13 +6,7 @@
   "compatibility_flags": [
     "nodejs_compat"
   ],
-  "secrets": {
-    "required": [
-      "XAI_BASE_URL",
-      "XAI_MODEL",
-      "XAI_API_KEY"
-    ]
-  },
+  "keep_vars": true,
   "observability": {
     "enabled": true,
     "logs": {
