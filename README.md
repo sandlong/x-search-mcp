@@ -27,12 +27,14 @@ The handle-filter state is one of three choices: no filter (default), an allow-l
 
 ## Worker environment
 
-Configure these Worker secrets:
+Production runtime configuration is managed in the Cloudflare dashboard, which is the canonical source for variables and secrets. `wrangler.jsonc` uses `keep_vars: true` and intentionally does not declare runtime variables or secrets.
 
-- `XAI_BASE_URL` (required): for example `https://api.x.ai/v1`, or a compatible middleware base URL ending in `/v1`.
-- `XAI_MODEL` (required): the model passed to the Responses API.
-- `XAI_API_KEY` (required): bearer credential accepted by the configured upstream.
-- `SECRET_PATH` (optional): a hard-to-guess URL prefix. If set, `/mcp` returns 404, and the root health response does not disclose the secret.
+Current settings used by the Worker:
+
+- `XAI_BASE_URL` (required variable): for example `https://api.x.ai/v1`, or a compatible middleware base URL ending in `/v1`.
+- `XAI_MODEL` (required variable): the model passed to the Responses API.
+- `XAI_API_KEY` (required secret): bearer credential accepted by the configured upstream.
+- `SECRET_PATH` (optional secret): a hard-to-guess URL prefix. If set, `/mcp` returns 404, and the root health response does not disclose the secret.
 
 The `SECRET_PATH` value is a shared URL secret, not user-specific authentication. Anyone with the full endpoint URL can use the upstream credential. Do not publish the complete URL.
 
@@ -46,12 +48,12 @@ npm run build
 npm test
 ```
 
-For local development, put the three required upstream values in a git-ignored `.dev.vars` file and run `npx wrangler dev`. Wrangler's required-secret declaration loads only the three listed values from `.dev.vars`; to test an optional secret path locally, use `npx wrangler dev --var SECRET_PATH:local-test-path`. Do not put a production secret on the command line.
+For local development, put the required upstream values in a git-ignored `.dev.vars` file and run `npx wrangler dev`. Add `SECRET_PATH` there as well when testing the optional secret path locally. Do not put production secrets on the command line.
 
 ## Deployment
 
-Set the three required Worker secrets before deployment (through the dashboard or Wrangler), then run `npm run deploy`. Set `SECRET_PATH` as another Worker secret to hide the endpoint behind that path.
+Configure production variables and secrets on the existing Worker in the Cloudflare dashboard. Cloudflare Workers Builds connects this repository's `main` branch to the existing `x-search-mcp` Worker; pushing to `main` runs the tests and type-check, then deploys it. Because `wrangler.jsonc` sets `keep_vars: true`, dashboard-managed variables are preserved across deployments; Worker secrets are also kept remotely rather than stored in Git.
 
-Cloudflare Workers Builds connects this repository's `main` branch to the existing `x-search-mcp` Worker. Pushing to `main` runs the tests and type-check, then deploys it. The upstream and secret-path bindings are configured on the production Worker and persist across deployments.
+For a manual deployment, run `npm run deploy`.
 
 MCP clients should use the full Streamable HTTP endpoint URL, with no `npx` command or stdio settings.
